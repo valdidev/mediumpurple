@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <chrono>
 #include <iomanip>
+#include <sstream>
 
 namespace fs = std::filesystem;
 
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
 
     // OUTPUT FILE
     std::string timestamp = getTimestamp();
-    std::string fullOutputFileName = logsFolder / (timestamp + "-" + outputFileName);
+    std::string fullOutputFileName = (logsFolder / (timestamp + "-" + outputFileName)).string();
 
     std::ofstream outputFile(fullOutputFileName);
     if (!outputFile)
