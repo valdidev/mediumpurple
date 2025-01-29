@@ -2,8 +2,21 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
+#include <chrono>
+#include <iomanip>
 
 namespace fs = std::filesystem;
+
+std::string getTimestamp()
+{
+    auto now = std::chrono::system_clock::now();
+    auto nowTimeT = std::chrono::system_clock::to_time_t(now);
+    std::tm localTm = *std::localtime(&nowTimeT);
+
+    std::ostringstream oss;
+    oss << std::put_time(&localTm, "%Y-%m-%d-%H-%M-%S");
+    return oss.str();
+}
 
 void processFolder(const fs::path &folderPath, std::ofstream &outputFile)
 {
@@ -23,13 +36,14 @@ void processFolder(const fs::path &folderPath, std::ofstream &outputFile)
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
+    if (argc < 3)
     {
-        std::cerr << "Usage: " << argv[0] << " <folder_path>\n";
+        std::cerr << "Usage: " << argv[0] << " <folder_path> <output_file>\n";
         return 1;
     }
 
     fs::path folderPath(argv[1]);
+    std::string outputFileName = argv[2];
 
     if (!fs::exists(folderPath) || !fs::is_directory(folderPath))
     {
@@ -37,19 +51,26 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // OUTPUT FILE
-    std::string outputFileName = "reporte-de-integridad.txt";
-    std::ofstream outputFile(outputFileName);
+    fs::path logsFolder = "watchdog-logs";
+    if (!fs::exists(logsFolder))
+    {
+        fs::create_directory(logsFolder);
+    }
 
+    // OUTPUT FILE
+    std::string timestamp = getTimestamp();
+    std::string fullOutputFileName = logsFolder / (timestamp + "-" + outputFileName);
+
+    std::ofstream outputFile(fullOutputFileName);
     if (!outputFile)
     {
-        std::cerr << "Failed to open " << outputFileName << " for writing\n";
+        std::cerr << "Failed to open " << fullOutputFileName << " for writing\n";
         return 1;
     }
 
     std::cout << "Processing folder: " << folderPath << "\n";
     processFolder(folderPath, outputFile);
-    std::cout << "Report saved to " << outputFileName << "\n";
+    std::cout << "Report saved to " << fullOutputFileName << "\n";
 
     return 0;
 }
